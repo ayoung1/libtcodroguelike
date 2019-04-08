@@ -30,12 +30,19 @@ def menu(con, header, options, width, screen_width, screen_height):
     libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
 
-def inventory_menu(con, header, inventory, inventory_width, screen_width, screen_height):
+def inventory_menu(con, header, player, inventory_width, screen_width, screen_height):
     # show a menu with each item of the inventory as an option
-    if len(inventory.items) == 0:
+    if len(player.inventory.items) == 0:
         options = ['Inventory is empty.']
     else:
-        options = [item.name for item in inventory.items]
+        options = []
+        for item in player.inventory.items:
+            if player.equipment.main_hand == item:
+                options.append('{0} (on main hand)'.format(item.name))
+            elif player.equipment.off_hand == item:
+                options.append('{0} (on off hand)'.format(item.name))
+            else:
+                options.append(item.name)
 
     menu(con, header, options, inventory_width, screen_width, screen_height)
 
@@ -58,7 +65,10 @@ def level_up_menu(con, header, player, menu_width, screen_width, screen_height):
                'Agility (+1 defense, from {0})'.format(player.fighter.defense)]
 
     menu(con, header, options, menu_width, screen_width, screen_height)
-    
+
+def exit_menu(con, header, player, menu_width, screen_width, screen_height):
+    options = ['Save and Quit', 'Return']
+    menu(con, header, options, menu_width, screen_width, screen_height)
 
 def character_screen(player, character_screen_width, character_screen_height, screen_width, screen_height):
     window = libtcod.console_new(character_screen_width, character_screen_height)

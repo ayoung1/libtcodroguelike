@@ -116,6 +116,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
         inventory_index         = action.get('inventory_index')
         take_stairs             = action.get('take_stairs')
         exit                    = action.get('exit')
+        quit_game               = action.get('quit_game')
         fullscreen              = action.get('fullscreen')
         level_up                = action.get('level_up')
         show_character_screen   = action.get('show_character_screen')
@@ -177,19 +178,18 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
-
                     break
             else:
                 message_log.add_message(Message('There are no stairs here.', libtcod.yellow))
 
         if level_up:
             if level_up == 'hp':
-                player.fighter.max_hp += 20
+                player.fighter.base_max_hp += 20
                 player.fighter.hp += 20
             elif level_up == 'str':
-                player.fighter.power += 1
+                player.fighter.base_power += 1
             elif level_up == 'def':
-                player.fighter.defense += 1
+                player.fighter.base_defense += 1
 
             game_state = previous_game_state
 
@@ -208,17 +208,20 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
                 player_turn_results.append({'targeting_cancelled': True})
 
         if exit:
-            if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN):
+            if game_state in (GameStates.EXIT, GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN):
                 game_state = previous_game_state
             elif game_state == GameStates.LEVEL_UP:
                 level_up_menu(con, 'Level up! Choose a stat to raise:', player, 40, screen_width, screen_height)
             elif game_state == GameStates.TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
             else:
+                previous_game_state = game_state
+                game_state = GameStates.EXIT
+
+        if quit_game:
                 save_game(player, entities, game_map, message_log, game_state)
-
                 return True
-
+        
         if fullscreen:
             libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
@@ -231,6 +234,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
             targeting               = player_turn_result.get('targeting')
             targeting_cancelled     = player_turn_result.get('targeting_cancelled')
             xp                      = player_turn_result.get('xp')
+            equip                   = player_turn_result.get('equip')
 
             if message:
                 message_log.add_message(message)
@@ -253,6 +257,20 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 
             if item_dropped:
                 entities.append(item_dropped)
+                game_state = GameStates.ENEMY_TURN
+
+            if equip:
+                equip_results = player.equipment.toggle_equip(equip)
+
+                for equip_result in equip_results:
+                    equipped = equip_result.get('equipped')
+                    dequipped = equip_result.get('dequipped')
+
+                    if equipped:
+                        message_log.add_message(Message('You equipped the {0}'.format(equipped.name)))
+
+                    if dequipped:
+                        message_log.add_message(Message('You dequipped the {0}'.format(dequipped.name)))
 
                 game_state = GameStates.ENEMY_TURN
 

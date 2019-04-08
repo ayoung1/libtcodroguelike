@@ -15,6 +15,8 @@ def handle_keys(key, game_state):
         return handle_level_up_menu(key)
     elif game_state == GameStates.CHARACTER_SCREEN:
         return handle_character_screen(key)
+    elif game_state == GameStates.EXIT:
+        return handle_exit_menu(key)
     return {}
 
 
@@ -33,6 +35,17 @@ def handle_main_menu(key):
     elif key_char == 'b':
         return {'load_game': True}
     elif key_char == 'c' or  key.vk == libtcod.KEY_ESCAPE:
+        return {'exit': True}
+
+    return {}
+
+
+def handle_exit_menu(key):
+    key_char = chr(key.c)
+
+    if key_char == 'a':
+        return {'quit_game': True}
+    elif key_char == 'b' or key.vk == libtcod.KEY_ESCAPE:
         return {'exit': True}
 
     return {}
